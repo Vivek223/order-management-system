@@ -6,7 +6,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.util.Objects;
 
-@Table(name = "countries")
+@Table(name = "COUNTRIES")
 @Entity
 public class Country {
 
