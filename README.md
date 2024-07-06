@@ -7,13 +7,24 @@ Objectives
 
 Rest Controllers:
 
-HTTP Post : http://localhost:8080/create-order
+HTTP Post : http://localhost:8080/create-multiple-order
 Postman >> Body >> Raw >> JSON 
-
 Sample JSON Request
 
+[
 {
-
-    "comment":"cm2",
-    "ipid":"ip2"
+"orderId": 3,
+"ipid": "ip1",
+"comment": "cm1"
+},
+{
+"orderId": 4,
+"ipid": "cm101",
+"comment": "ip101"
+},
+{
+"orderId": 5,
+"ipid": "cm105",
+"comment": "ip105"
 }
+]
