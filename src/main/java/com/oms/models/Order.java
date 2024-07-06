@@ -12,14 +12,10 @@ import java.time.LocalDateTime;
 @Setter
 public class Order {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private int orderId;
 
     private String ipid;
     private String comment;
-
-    //private LocalDateTime orderDate;
-    //  private String cashAccount;
-    //private String custodyAccount;
 
 }
