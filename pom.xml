@@ -22,6 +22,8 @@
         <hibernate.core.version>6.4.2.Final</hibernate.core.version>
 
     </properties>
+    
+    <!-- Dependencies go here -->
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
