@@ -24,6 +24,8 @@
     </properties>
     
     <!-- Dependencies go here -->
+    <!-- Vivek 223 Include Kafka dependencies -->
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
