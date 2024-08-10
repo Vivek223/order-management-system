@@ -26,6 +26,8 @@
     <!-- vivt23 Dependencies go here V1.0 -->
     <!-- Vivek 223 Include Kafka dependencies -->
     <!-- vivekt2024 babloo32123 added this line -->
+    <!-- tiwarigeetika24 added this line -->
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
