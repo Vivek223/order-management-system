@@ -23,7 +23,7 @@
 
     </properties>
     
-    <!-- Dependencies go here -->
+    <!-- vivt23 Dependencies go here -->
     <!-- Vivek 223 Include Kafka dependencies -->
 
     <dependencies>
