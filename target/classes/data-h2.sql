@@ -6,4 +6,4 @@ INSERT INTO "countries" VALUES (5, 'Canada');
 INSERT INTo "countries" VALUES (6, 'Qatar');
 INSERT INTo "countries" VALUES (7, 'India123');
 
-INSERT INTO "orders"  VALUES (1,  'First order coming soon' , 'ip101'  );
+--INSERT INTO "orders"  VALUES (1,  'First order coming soon' , 'ip101'  );
