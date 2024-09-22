@@ -1,0 +1,57 @@
+<dependency>
+    <groupId>javax.websocket</groupId>
+    <artifactId>javax.websocket-api</artifactId>
+    <version>1.1</version>
+</dependency>
+====================================
+
+import javax.websocket.*;
+import java.net.URI;
+
+@ClientEndpoint
+public class WebSocketClient {
+
+    private Session session;
+
+    // Method to handle opening the connection
+    @OnOpen
+    public void onOpen(Session session) {
+        System.out.println("Connected to server");
+        this.session = session;
+    }
+
+    // Method to handle receiving a message from the WebSocket
+    @OnMessage
+    public void onMessage(String message) {
+        System.out.println("Received message: " + message);
+    }
+
+    // Method to handle closing the connection
+    @OnClose
+    public void onClose(Session session, CloseReason closeReason) {
+        System.out.println("Connection closed: " + closeReason);
+    }
+
+    // Method to handle errors
+    @OnError
+    public void onError(Session session, Throwable throwable) {
+        System.out.println("Error: " + throwable.getMessage());
+    }
+
+    // Method to start the WebSocket client
+    public static void startWebSocketClient(String uri) {
+        WebSocketContainer container = ContainerProvider.getWebSocketContainer();
+        try {
+            URI serverUri = new URI(uri);
+            container.connectToServer(WebSocketClient.class, serverUri);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void main(String[] args) {
+        // Replace with your WebSocket server URI
+        String uri = "ws://echo.websocket.org";  // Example WebSocket server for testing
+        startWebSocketClient(uri);
+    }
+}
