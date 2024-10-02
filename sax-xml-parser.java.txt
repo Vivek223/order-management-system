@@ -1,0 +1,71 @@
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
+
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import java.io.ByteArrayInputStream;
+
+public class SAXParserExample {
+
+    public static void main(String[] args) {
+        String xmlString = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<Person>\n" +
+                "    <name>John Doe</name>\n" +
+                "    <age>30</age>\n" +
+                "    <city>New York</city>\n" +
+                "</Person>";
+
+        try {
+            // Prepare the XML string as input
+            ByteArrayInputStream input = new ByteArrayInputStream(xmlString.getBytes("UTF-8"));
+
+            // Initialize the SAX parser
+            SAXParserFactory factory = SAXParserFactory.newInstance();
+            SAXParser saxParser = factory.newSAXParser();
+
+            // Define the handler
+            DefaultHandler handler = new DefaultHandler() {
+                boolean isName = false;
+                boolean isAge = false;
+                boolean isCity = false;
+
+                // Start element
+                public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+                    if (qName.equalsIgnoreCase("name")) {
+                        isName = true;
+                    } else if (qName.equalsIgnoreCase("age")) {
+                        isAge = true;
+                    } else if (qName.equalsIgnoreCase("city")) {
+                        isCity = true;
+                    }
+                }
+
+                // End element
+                public void endElement(String uri, String localName, String qName) throws SAXException {
+                    // Optionally handle end elements here
+                }
+
+                // Character data
+                public void characters(char ch[], int start, int length) throws SAXException {
+                    if (isName) {
+                        System.out.println("Name: " + new String(ch, start, length));
+                        isName = false;
+                    } else if (isAge) {
+                        System.out.println("Age: " + new String(ch, start, length));
+                        isAge = false;
+                    } else if (isCity) {
+                        System.out.println("City: " + new String(ch, start, length));
+                        isCity = false;
+                    }
+                }
+            };
+
+            // Parse the XML string
+            saxParser.parse(input, handler);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
