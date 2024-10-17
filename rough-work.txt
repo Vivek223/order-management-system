@@ -1,0 +1,62 @@
+import org.apache.ignite.Ignite;
+import org.apache.ignite.Ignition;
+import org.apache.ignite.cache.CacheMode;
+import org.apache.ignite.configuration.CacheConfiguration;
+import org.apache.ignite.configuration.IgniteConfiguration;
+import org.apache.ignite.cache.query.SqlFieldsQuery;
+import org.apache.ignite.IgniteCache;
+
+import java.util.List;
+
+public class IgniteQueryExample {
+
+    public static void main(String[] args) {
+        // Start Ignite node with default configuration.
+        IgniteConfiguration igniteCfg = new IgniteConfiguration();
+        Ignite ignite = Ignition.start(igniteCfg);
+
+        // Define the cache configuration with SQL schema.
+        CacheConfiguration<Integer, Person> cacheConfig = new CacheConfiguration<>("PersonCache");
+        cacheConfig.setCacheMode(CacheMode.PARTITIONED);
+        cacheConfig.setIndexedTypes(Integer.class, Person.class);
+
+        // Create the cache.
+        IgniteCache<Integer, Person> personCache = ignite.getOrCreateCache(cacheConfig);
+
+        // Insert sample data into the cache.
+        personCache.put(1, new Person(1, "Alice", 30));
+        personCache.put(2, new Person(2, "Bob", 35));
+        personCache.put(3, new Person(3, "Charlie", 25));
+
+        // Query the cache using SQL to fetch all people older than 28.
+        String sql = "SELECT id, name, age FROM Person WHERE age > ?";
+        SqlFieldsQuery query = new SqlFieldsQuery(sql).setArgs(28);
+
+        // Execute the query and print results.
+        List<List<?>> result = personCache.query(query).getAll();
+        System.out.println("People older than 28:");
+        for (List<?> row : result) {
+            System.out.println("ID: " + row.get(0) + ", Name: " + row.get(1) + ", Age: " + row.get(2));
+        }
+
+        // Close Ignite instance.
+        ignite.close();
+    }
+
+    // A simple Person class to store in the cache.
+    public static class Person implements java.io.Serializable {
+        private int id;
+        private String name;
+        private int age;
+
+        public Person(int id, String name, int age) {
+            this.id = id;
+            this.name = name;
+            this.age = age;
+        }
+
+        public int getId() { return id; }
+        public String getName() { return name; }
+        public int getAge() { return age; }
+    }
+}
