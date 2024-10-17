@@ -1,0 +1,31 @@
+import org.apache.ignite.Ignite;
+import org.apache.ignite.Ignition;
+import org.apache.ignite.configuration.IgniteConfiguration;
+import org.apache.ignite.plugin.security.SecurityCredentials;
+import org.apache.ignite.plugin.security.SecurityCredentialsProvider;
+import org.apache.ignite.plugin.security.SecurityPermissionSetBuilder;
+import org.apache.ignite.plugin.security.SecurityPermission;
+import org.apache.ignite.plugin.security.SecurityPermissionSet;
+
+public class IgniteAuthConfig {
+    public static void main(String[] args) {
+        IgniteConfiguration cfg = new IgniteConfiguration();
+
+        // Setup basic authentication users
+        cfg.setSecurityCredentialsProvider(() -> new SecurityCredentials("admin", "adminPass"));
+
+        // Define permission sets (Optional: to manage what actions users can perform)
+        SecurityPermissionSet permissionSet = new SecurityPermissionSetBuilder()
+                .defaultAllowAll(false) // Disable all permissions by default
+                .allowCacheRead("myCache")
+                .allowCacheWrite("myCache")
+                .build();
+
+        cfg.setSecurityPermissionSet(permissionSet);
+
+        // Start Ignite with security enabled
+        Ignite ignite = Ignition.start(cfg);
+
+        System.out.println("Ignite node started with security enabled.");
+    }
+}
