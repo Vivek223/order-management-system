@@ -1,0 +1,125 @@
+. Key-Level Access Control Using Cache Interceptors
+In this example, we'll implement a simple key-level access control where each user can only access certain keys in a cache. We'll define a list of allowed keys for each user, and use an interceptor to block access to keys not included in the list.
+
+Step 1: Define the Cache Interceptor
+The CacheInterceptor will check the key being accessed and decide whether to allow or deny access.
+
+Example: Cache Interceptor Implementation
+**********************************************************
+import org.apache.ignite.cache.CacheInterceptorAdapter;
+import org.apache.ignite.cache.CacheInterceptorEntry;
+import org.jetbrains.annotations.Nullable;
+import java.util.Set;
+
+public class KeyAccessInterceptor extends CacheInterceptorAdapter<Integer, String> {
+    private final Set<Integer> allowedKeys;
+
+    // Constructor to initialize allowed keys for the user
+    public KeyAccessInterceptor(Set<Integer> allowedKeys) {
+        this.allowedKeys = allowedKeys;
+    }
+
+    // Intercepting the get operation
+    @Nullable
+    @Override
+    public String onGet(Integer key, @Nullable String value) {
+        // Check if the key is allowed
+        if (!allowedKeys.contains(key)) {
+            System.out.println("Access denied to key: " + key);
+            return null; // Deny access by returning null for restricted keys
+        }
+        return value; // Allow access if the key is permitted
+    }
+
+    // Optionally, intercept other operations like put, remove, etc.
+    @Override
+    public String onBeforePut(CacheInterceptorEntry<Integer, String> entry, String newValue) {
+        if (!allowedKeys.contains(entry.getKey())) {
+            System.out.println("Put operation denied for key: " + entry.getKey());
+            return null; // Deny put operation for restricted keys
+        }
+        return newValue; // Allow put if the key is permitted
+    }
+}
+
+**************************************
+Step 2: Apply the Interceptor to the Cache
+Now, we need to configure the Ignite cache to use the KeyAccessInterceptor. Here, we create a cache and apply the interceptor that restricts access to certain keys based on the current user's permissions.
+
+Example: Applying the Interceptor
+**********************************************
+import org.apache.ignite.Ignite;
+import org.apache.ignite.Ignition;
+import org.apache.ignite.configuration.CacheConfiguration;
+import org.apache.ignite.cache.CacheMode;
+import java.util.HashSet;
+import java.util.Set;
+
+public class KeyLevelAccessExample {
+    public static void main(String[] args) {
+        // Start Ignite node
+        Ignite ignite = Ignition.start();
+
+        // Define the allowed keys for the current user (user-specific access control)
+        Set<Integer> allowedKeys = new HashSet<>();
+        allowedKeys.add(1);
+        allowedKeys.add(3); // This user can access keys 1 and 3
+
+        // Configure the cache
+        CacheConfiguration<Integer, String> cacheCfg = new CacheConfiguration<>("KeyAccessCache");
+        cacheCfg.setCacheMode(CacheMode.PARTITIONED); // Set cache mode (PARTITIONED, REPLICATED, etc.)
+
+        // Apply the KeyAccessInterceptor to enforce key-level access control
+        cacheCfg.setInterceptor(new KeyAccessInterceptor(allowedKeys));
+
+        // Create the cache with the interceptor applied
+        ignite.createCache(cacheCfg);
+
+        // Put some values into the cache
+        ignite.cache("KeyAccessCache").put(1, "Value for key 1");
+        ignite.cache("KeyAccessCache").put(2, "Value for key 2");
+        ignite.cache("KeyAccessCache").put(3, "Value for key 3");
+
+        // Access cache entries
+        System.out.println("Accessing key 1: " + ignite.cache("KeyAccessCache").get(1)); // Allowed
+        System.out.println("Accessing key 2: " + ignite.cache("KeyAccessCache").get(2)); // Denied
+        System.out.println("Accessing key 3: " + ignite.cache("KeyAccessCache").get(3)); // Allowed
+    }
+}
+
+*********************************************************
+
+Explanation:
+KeyAccessInterceptor: This interceptor checks whether the key being accessed or modified is allowed for the current user. If not, access is denied.
+allowedKeys: This set defines which keys the user is allowed to access. For each user, a different set of allowed keys can be provided.
+onGet(): This method controls the access to keys when a get operation is performed. It returns null for keys that the user is not allowed to access.
+onBeforePut(): This method controls write access by denying put operations for restricted keys.
+2. Sample Output
+Assuming the user has access to keys 1 and 3, the output would look like this:
+
+*************************************
+
+Key 1: The user is allowed to access this key, so the value is returned.
+Key 2: The user is not allowed to access this key, so access is denied, and null is returned.
+Key 3: The user is allowed to access this key, so the value is returned.
+
+
+
+3. Extending the Example
+Multiple Users
+For multiple users, you can maintain a mapping between users and their respective allowed keys and pass the relevant allowedKeys set when applying the intercepto
+
+// Example of allowed keys for different users
+Set<Integer> allowedKeysForUser1 = Set.of(1, 3);
+Set<Integer> allowedKeysForUser2 = Set.of(2, 4);
+
+// Apply the interceptor based on the user's allowed keys
+cacheCfg.setInterceptor(new KeyAccessInterceptor(allowedKeysForUser1)); // For user1
+
+
+Other Operations
+You can extend the example to control other cache operations such as put, remove, or transactions by overriding additional methods in the interceptor class.
+
+Summary
+This example demonstrates how to implement key-level access control in Apache Ignite using cache interceptors. By controlling access at the key level, you can enforce fine-grained security policies for users accessing specific cache entries.
+
