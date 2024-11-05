@@ -1,0 +1,65 @@
+<dependency>
+    <groupId>io.github.resilience4j</groupId>
+    <artifactId>resilience4j-spring-boot3</artifactId>
+    <version>2.0.2</version>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+
+*********************
+# application.yml
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        registerHealthIndicator: true
+        slidingWindowSize: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 5s
+        permittedNumberOfCallsInHalfOpenState: 3
+  retry:
+    configs:
+      default:
+        maxAttempts: 3
+        waitDuration: 1s
+        enableExponentialBackoff: true
+  ratelimiter:
+    configs:
+      default:
+        limitRefreshPeriod: 1s
+        limitForPeriod: 5
+*********************
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+@Service
+public class ResilientService {
+
+    private final RestTemplate restTemplate = new RestTemplate();
+
+    @CircuitBreaker(name = "exampleService", fallbackMethod = "fallback")
+    @Retry(name = "exampleService")
+    @RateLimiter(name = "exampleService")
+    public String callExternalService() {
+        // Simulate a remote call, replace with actual call
+        String response = restTemplate.getForObject("http://unreliable-service/api", String.class);
+        return response;
+    }
+
+    public String fallback(Exception ex) {
+        return "Fallback response";
+    }
+}
+
+*********************
+management:
+  endpoints:
+    web:
+      exposure:
+        include: resilience4j*, health
+*********************
