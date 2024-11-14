@@ -1,3 +1,23 @@
+resilience4j:
+  circuitbreaker:
+    instances:
+      externalServiceCircuitBreaker:
+        slidingWindowSize: 5
+        minimumNumberOfCalls: 3
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        # Record multiple exceptions that should count as failures
+        recordExceptions:
+          - com.example.exception.CustomException
+          - java.net.ConnectException
+        # Ignore multiple exceptions that should not count as failures
+        ignoreExceptions:
+          - com.example.exception.AnotherException
+          - java.io.IOException
+
+
+
+
 <dependency>
     <groupId>io.github.resilience4j</groupId>
     <artifactId>resilience4j-spring-boot3</artifactId>
