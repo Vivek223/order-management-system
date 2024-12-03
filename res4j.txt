@@ -1,85 +1,71 @@
-resilience4j:
-  circuitbreaker:
-    instances:
-      externalServiceCircuitBreaker:
-        slidingWindowSize: 5
-        minimumNumberOfCalls: 3
-        failureRateThreshold: 50
-        waitDurationInOpenState: 10s
-        # Record multiple exceptions that should count as failures
-        recordExceptions:
-          - com.example.exception.CustomException
-          - java.net.ConnectException
-        # Ignore multiple exceptions that should not count as failures
-        ignoreExceptions:
-          - com.example.exception.AnotherException
-          - java.io.IOException
+import io.github.resilience4j.retry.RetryRegistry;
+import io.github.resilience4j.retry.RetryConfig;
+import io.github.resilience4j.retry.Retry;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.*;
 
+@SpringBootTest
+class MyServiceTest {
 
-<dependency>
-    <groupId>io.github.resilience4j</groupId>
-    <artifactId>resilience4j-spring-boot3</artifactId>
-    <version>2.0.2</version>
-</dependency>
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-actuator</artifactId>
-</dependency>
+    @MockBean
+    private MyService myService;
 
-*********************
-# application.yml
-resilience4j:
-  circuitbreaker:
-    configs:
-      default:
-        registerHealthIndicator: true
-        slidingWindowSize: 5
-        failureRateThreshold: 50
-        waitDurationInOpenState: 5s
-        permittedNumberOfCallsInHalfOpenState: 3
-  retry:
-    configs:
-      default:
-        maxAttempts: 3
-        waitDuration: 1s
-        enableExponentialBackoff: true
-  ratelimiter:
-    configs:
-      default:
-        limitRefreshPeriod: 1s
-        limitForPeriod: 5
-*********************
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import io.github.resilience4j.retry.annotation.Retry;
-import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+    @Autowired
+    private RetryRegistry retryRegistry;
 
-@Service
-public class ResilientService {
+    private Retry retry;
 
-    private final RestTemplate restTemplate = new RestTemplate();
-
-    @CircuitBreaker(name = "exampleService", fallbackMethod = "fallback")
-    @Retry(name = "exampleService")
-    @RateLimiter(name = "exampleService")
-    public String callExternalService() {
-        // Simulate a remote call, replace with actual call
-        String response = restTemplate.getForObject("http://unreliable-service/api", String.class);
-        return response;
+    @BeforeEach
+    void setUp() {
+        retry = retryRegistry.retry("myServiceRetry");
     }
 
-    public String fallback(Exception ex) {
-        return "Fallback response";
+    @Test
+    void testRetrySuccessAfterFailure() {
+        // Mock the unstableMethod to fail twice, then succeed
+        AtomicInteger invocationCounter = new AtomicInteger(0);
+        when(myService.unstableMethod()).thenAnswer(invocation -> {
+            if (invocationCounter.incrementAndGet() < 3) {
+                throw new RuntimeException("Simulated failure");
+            }
+            return "Success!";
+        });
+
+        // Call the method
+        String result = myService.unstableMethod();
+
+        // Verify the result
+        assertEquals("Success!", result);
+
+        // Verify the number of attempts
+        verify(myService, times(3)).unstableMethod();
+    }
+
+    @Test
+    void testRetryFallbackAfterMaxAttempts() {
+        // Mock the unstableMethod to always fail
+        when(myService.unstableMethod()).thenThrow(new RuntimeException("Simulated failure"));
+
+        // Call the method and expect the fallback
+        String result = null;
+        try {
+            result = myService.unstableMethod();
+        } catch (RuntimeException ignored) {
+        }
+
+        // Verify the fallback is triggered
+        assertEquals(null, result);
+
+        // Verify the number of attempts
+        verify(myService, times(retryTimes)).unstableMethod();
     }
 }
-
-*********************
-management:
-  endpoints:
-    web:
-      exposure:
-        include: resilience4j*, health
-*********************
