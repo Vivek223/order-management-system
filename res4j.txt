@@ -1,71 +1,48 @@
-import io.github.resilience4j.retry.RetryRegistry;
-import io.github.resilience4j.retry.RetryConfig;
-import io.github.resilience4j.retry.Retry;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
+@Component
+@ConfigurationProperties(prefix = "resilience4j.retry.configs.default")
+public class RetryProperties {
 
-@SpringBootTest
-class MyServiceTest {
+    private int maxAttempts;
+    private long waitDuration;
+    private List<String> retryExceptions;
+    private List<String> ignoreExceptions;
 
-    @MockBean
-    private MyService myService;
+    // Getters and Setters
 
-    @Autowired
-    private RetryRegistry retryRegistry;
-
-    private Retry retry;
-
-    @BeforeEach
-    void setUp() {
-        retry = retryRegistry.retry("myServiceRetry");
+    public int getMaxAttempts() {
+        return maxAttempts;
     }
 
-    @Test
-    void testRetrySuccessAfterFailure() {
-        // Mock the unstableMethod to fail twice, then succeed
-        AtomicInteger invocationCounter = new AtomicInteger(0);
-        when(myService.unstableMethod()).thenAnswer(invocation -> {
-            if (invocationCounter.incrementAndGet() < 3) {
-                throw new RuntimeException("Simulated failure");
-            }
-            return "Success!";
-        });
-
-        // Call the method
-        String result = myService.unstableMethod();
-
-        // Verify the result
-        assertEquals("Success!", result);
-
-        // Verify the number of attempts
-        verify(myService, times(3)).unstableMethod();
+    public void setMaxAttempts(int maxAttempts) {
+        this.maxAttempts = maxAttempts;
     }
 
-    @Test
-    void testRetryFallbackAfterMaxAttempts() {
-        // Mock the unstableMethod to always fail
-        when(myService.unstableMethod()).thenThrow(new RuntimeException("Simulated failure"));
+    public long getWaitDuration() {
+        return waitDuration;
+    }
 
-        // Call the method and expect the fallback
-        String result = null;
-        try {
-            result = myService.unstableMethod();
-        } catch (RuntimeException ignored) {
-        }
+    public void setWaitDuration(long waitDuration) {
+        this.waitDuration = waitDuration;
+    }
 
-        // Verify the fallback is triggered
-        assertEquals(null, result);
+    public List<String> getRetryExceptions() {
+        return retryExceptions;
+    }
 
-        // Verify the number of attempts
-        verify(myService, times(retryTimes)).unstableMethod();
+    public void setRetryExceptions(List<String> retryExceptions) {
+        this.retryExceptions = retryExceptions;
+    }
+
+    public List<String> getIgnoreExceptions() {
+        return ignoreExceptions;
+    }
+
+    public void setIgnoreExceptions(List<String> ignoreExceptions) {
+        this.ignoreExceptions = ignoreExceptions;
     }
 }
