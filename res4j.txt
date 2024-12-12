@@ -1,36 +1,83 @@
-import org.apache.ignite.Ignite;
-import org.apache.ignite.Ignition;
-import org.apache.ignite.configuration.CacheConfiguration;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
-public class IgniteJoinExample {
-    public static void main(String[] args) {
-        try (Ignite ignite = Ignition.start()) {
-            CacheConfiguration<Integer, Employee> employeeCacheConfig = new CacheConfiguration<>("employeeCache");
-            employeeCacheConfig.setIndexedTypes(Integer.class, Employee.class);
+import java.util.Optional;
 
-            CacheConfiguration<Integer, Department> departmentCacheConfig = new CacheConfiguration<>("departmentCache");
-            departmentCacheConfig.setIndexedTypes(Integer.class, Department.class);
+import static org.assertj.core.api.Assertions.assertThat;
 
-            ignite.getOrCreateCache(employeeCacheConfig);
-            ignite.getOrCreateCache(departmentCacheConfig);
+@DataJpaTest
+public class UserRepositoryTest {
 
-            // Populate data
-            ignite.cache("employeeCache").put(1, new Employee(1, "Alice", 1));
-            ignite.cache("employeeCache").put(2, new Employee(2, "Bob", 2));
-            ignite.cache("departmentCache").put(1, new Department(1, "HR"));
-            ignite.cache("departmentCache").put(2, new Department(2, "Engineering"));
+    @Autowired
+    private UserRepository userRepository;
 
-            // Execute SQL query
-            String sql = "SELECT e.name, d.name " +
-                         "FROM Employee e " +
-                         "INNER JOIN Department d " +
-                         "ON e.deptId = d.id";
+    @Test
+    void testSaveUser() {
+        // Arrange
+        User user = new User();
+        user.setName("John Doe");
+        user.setEmail("john.doe@example.com");
 
-            try (QueryCursor<List<?>> cursor = ignite.cache("employeeCache").query(new SqlFieldsQuery(sql))) {
-                for (List<?> row : cursor) {
-                    System.out.println("Employee: " + row.get(0) + ", Department: " + row.get(1));
-                }
-            }
-        }
+        // Act
+        User savedUser = userRepository.save(user);
+
+        // Assert
+        assertThat(savedUser.getId()).isNotNull();
+        assertThat(savedUser.getName()).isEqualTo("John Doe");
+        assertThat(savedUser.getEmail()).isEqualTo("john.doe@example.com");
+    }
+
+    @Test
+    void testFindUserById() {
+        // Arrange
+        User user = new User();
+        user.setName("Jane Doe");
+        user.setEmail("jane.doe@example.com");
+        User savedUser = userRepository.save(user);
+
+        // Act
+        Optional<User> foundUser = userRepository.findById(savedUser.getId());
+
+        // Assert
+        assertThat(foundUser).isPresent();
+        assertThat(foundUser.get().getName()).isEqualTo("Jane Doe");
+        assertThat(foundUser.get().getEmail()).isEqualTo("jane.doe@example.com");
+    }
+
+    @Test
+    void testUpdateUser() {
+        // Arrange
+        User user = new User();
+        user.setName("John Smith");
+        user.setEmail("john.smith@example.com");
+        User savedUser = userRepository.save(user);
+
+        // Act
+        savedUser.setName("John Updated");
+        userRepository.save(savedUser);
+
+        Optional<User> updatedUser = userRepository.findById(savedUser.getId());
+
+        // Assert
+        assertThat(updatedUser).isPresent();
+        assertThat(updatedUser.get().getName()).isEqualTo("John Updated");
+    }
+
+    @Test
+    void testDeleteUser() {
+        // Arrange
+        User user = new User();
+        user.setName("Mark Doe");
+        user.setEmail("mark.doe@example.com");
+        User savedUser = userRepository.save(user);
+
+        // Act
+        userRepository.deleteById(savedUser.getId());
+
+        Optional<User> deletedUser = userRepository.findById(savedUser.getId());
+
+        // Assert
+        assertThat(deletedUser).isEmpty();
     }
 }
