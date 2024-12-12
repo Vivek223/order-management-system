@@ -1,48 +1,36 @@
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
+import org.apache.ignite.Ignite;
+import org.apache.ignite.Ignition;
+import org.apache.ignite.configuration.CacheConfiguration;
 
-import java.util.List;
+public class IgniteJoinExample {
+    public static void main(String[] args) {
+        try (Ignite ignite = Ignition.start()) {
+            CacheConfiguration<Integer, Employee> employeeCacheConfig = new CacheConfiguration<>("employeeCache");
+            employeeCacheConfig.setIndexedTypes(Integer.class, Employee.class);
 
-@Component
-@ConfigurationProperties(prefix = "resilience4j.retry.configs.default")
-public class RetryProperties {
+            CacheConfiguration<Integer, Department> departmentCacheConfig = new CacheConfiguration<>("departmentCache");
+            departmentCacheConfig.setIndexedTypes(Integer.class, Department.class);
 
-    private int maxAttempts;
-    private long waitDuration;
-    private List<String> retryExceptions;
-    private List<String> ignoreExceptions;
+            ignite.getOrCreateCache(employeeCacheConfig);
+            ignite.getOrCreateCache(departmentCacheConfig);
 
-    // Getters and Setters
+            // Populate data
+            ignite.cache("employeeCache").put(1, new Employee(1, "Alice", 1));
+            ignite.cache("employeeCache").put(2, new Employee(2, "Bob", 2));
+            ignite.cache("departmentCache").put(1, new Department(1, "HR"));
+            ignite.cache("departmentCache").put(2, new Department(2, "Engineering"));
 
-    public int getMaxAttempts() {
-        return maxAttempts;
-    }
+            // Execute SQL query
+            String sql = "SELECT e.name, d.name " +
+                         "FROM Employee e " +
+                         "INNER JOIN Department d " +
+                         "ON e.deptId = d.id";
 
-    public void setMaxAttempts(int maxAttempts) {
-        this.maxAttempts = maxAttempts;
-    }
-
-    public long getWaitDuration() {
-        return waitDuration;
-    }
-
-    public void setWaitDuration(long waitDuration) {
-        this.waitDuration = waitDuration;
-    }
-
-    public List<String> getRetryExceptions() {
-        return retryExceptions;
-    }
-
-    public void setRetryExceptions(List<String> retryExceptions) {
-        this.retryExceptions = retryExceptions;
-    }
-
-    public List<String> getIgnoreExceptions() {
-        return ignoreExceptions;
-    }
-
-    public void setIgnoreExceptions(List<String> ignoreExceptions) {
-        this.ignoreExceptions = ignoreExceptions;
+            try (QueryCursor<List<?>> cursor = ignite.cache("employeeCache").query(new SqlFieldsQuery(sql))) {
+                for (List<?> row : cursor) {
+                    System.out.println("Employee: " + row.get(0) + ", Department: " + row.get(1));
+                }
+            }
+        }
     }
 }
