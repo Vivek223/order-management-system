@@ -1,0 +1,36 @@
+# Check Current Context (AKS Cluster Access)
+kubectl config current-context
+
+# List All Contexts
+kubectl config get-contexts
+
+# Switch to Correct Context (if needed)
+kubectl config use-context <your-aks-context>
+
+# Get All Services in a Namespace
+kubectl get svc -n <namespace>
+
+# OR: Search for blotter-service Across All Namespaces
+kubectl get svc --all-namespaces | grep blotter-service
+
+# Describe the Service for Detailed Info
+kubectl describe svc blotter-service -n <namespace>
+
+# Get Endpoints Backing the Service
+kubectl get endpoints blotter-service -n <namespace>
+
+# Get Service Selector (to find related pods)
+kubectl get svc blotter-service -n <namespace> -o=jsonpath='{.spec.selector}'
+
+# List Pods Matching the Service's Label Selector
+kubectl get pods -n <namespace> -l <label_selector>
+
+# View Logs from a Specific Pod
+kubectl logs <pod-name> -n <namespace>
+
+# Port-Forward to Access Service Locally
+kubectl port-forward svc/blotter-service 8080:80 -n <namespace>
+# Then open http://localhost:8080 in a browser
+
+# Get All Related Resources in Namespace (Pods, Services, Deployments, etc.)
+kubectl get all -n <namespace> | grep blotter
